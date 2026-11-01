@@ -1,0 +1,2516 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel File Formatter with Special Fee Management</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            text-align: center;
+            padding: 40px;
+            border: 3px dashed #ddd;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .upload-section.dragover {
+            border-color: #667eea;
+            background: #e8f2ff;
+            transform: scale(1.02);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .file-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e8;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .fee-config-section {
+            margin: 30px 0;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            display: none;
+        }
+
+        .fee-config-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .fee-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .fee-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .fee-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .fee-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .fee-abbrev {
+            background: #ecf0f1;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+
+        .fee-amount {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+
+        .fee-rules {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .rule-group {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+
+        .rule-title {
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .rule-options {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .rule-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85em;
+        }
+
+        .rule-option input[type="checkbox"] {
+            transform: scale(0.9);
+        }
+
+        .convert-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px auto;
+            display: block;
+        }
+
+        .convert-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
+        }
+
+        .convert-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .preview-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .preview-title {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            min-width: 1200px;
+        }
+
+        th,
+        td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+            font-size: 0.9em;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px auto;
+            display: block;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
+        }
+
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .fee-summary {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .summary-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .summary-count {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .summary-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .instruction-section {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+
+        .instruction-header {
+            padding: 20px;
+            background: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .instruction-header:hover {
+            background: #e9ecef;
+        }
+
+        .instruction-title {
+            font-size: 1.1em;
+            color: #2c3e50;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instruction-icon {
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .instruction-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, padding 0.4s ease;
+            background: #fff;
+        }
+
+        .instruction-content.open {
+            padding: 20px;
+            max-height: 1200px;
+            border-top: 1px solid #e9ecef;
+            transition: max-height 0.6s ease-in, padding 0.4s ease;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+
+        .data-table th {
+            background-color: #f1f3f5;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .step-list {
+            margin-left: 20px;
+            color: #495057;
+            line-height: 1.6;
+        }
+
+        .step-list li {
+            margin-bottom: 8px;
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s ease;
+            color: #6c757d;
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .section-head h3 {
+            color: #2c3e50;
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+
+        .sub-title {
+            color: #2c3e50;
+            margin: 20px 0 8px;
+        }
+
+        .small-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .small-btn.green {
+            background: #28a745;
+        }
+
+        .small-btn.red {
+            background: #dc3545;
+        }
+
+        .small-btn.grey {
+            background: #6c757d;
+        }
+
+        .small-btn:hover {
+            opacity: 0.9;
+        }
+
+        .scroll-box {
+            overflow: auto;
+            max-height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+        }
+
+        table.grid-table {
+            min-width: 0;
+        }
+
+        .grid-table th,
+        .grid-table td {
+            border: 1px solid #e1e4e8;
+            padding: 6px 8px;
+            font-size: 0.85em;
+            vertical-align: middle;
+        }
+
+        .grid-table th {
+            background: #f1f3f5;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .grid-table input[type="text"],
+        .grid-table input[type="number"],
+        .grid-table select {
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        .grid-table input[type="number"] {
+            width: 80px;
+        }
+
+        .grid-table td.num {
+            text-align: right;
+        }
+
+        .grid-table tr.info-row td {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .badge.ok {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge.fix {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .badge.warn {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge.bad {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .hint {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .warn-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        .warn-box ul {
+            margin-left: 20px;
+        }
+
+        .ok-box {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        .grid-table tr.row-egrantz td {
+            background: #fdecea;
+        }
+
+        .grid-table tr.row-full td {
+            background: #e8f5e9;
+        }
+
+        .inline-field {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .inline-field label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .inline-field input,
+        .inline-field select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Egrantz Fee Manager</h1>
+            <p>Developed by Sreejith M, Head Accountant, Govt. Arts and Science College Uduma </p>
+        </div>
+
+        <div class="content">
+            <div class="instruction-section">
+                <div class="instruction-header" onclick="toggleInstructions()">
+                    <div class="instruction-title">
+                        <span class="instruction-icon">ℹ️</span>
+                        <span>How to Use this application</span>
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="instruction-content" id="instructionContent">
+                    <h4 style="color: #2c3e50; margin-bottom: 15px; margin-top: 25px;">Step-by-Step Usage Guide</h4>
+                    <ol class="step-list">
+                        <li><strong>Upload Egrantz File:</strong> Upload the Excel (.xlsx / .xls) or CSV file
+                            downloaded from the Egrantz site. The first row (reference number with the sanctioned amount
+                            in brackets) is read automatically.</li>
+                        <li><strong>Compare with Master Sheet:</strong> Upload the master sheet (Adm. No., Student Name,
+                            Course, Academic Year). It is remembered in this browser. Students are matched by Admission
+                            Number, or by name, course and batch when the Admission Number is blank. Review rows marked
+                            in yellow/red and correct the course names if needed.</li>
+                        <li><strong>Configure Special Fees:</strong> Fee rates are kept per Academic Year (taken from
+                            the Period column, e.g. July 2024 → 2024-2025) for UG I–IV and PG I–II. Enter 0 where a fee
+                            is not applicable. Lab fee is calculated as Special Fee minus the other fees.</li>
+                        <li><strong>Disbursement:</strong> For each student tick where the money goes – Refund to
+                            Egrantz, Full amount to student (except ABLC), individual University Special Fee heads / Exam
+                            Fee to student (unticked heads go to University), or partly paid Tuition Fee.</li>
+                        <li><strong>Download:</strong> Download the <strong>Formatted Excel with Account
+                                Summary</strong> and the <strong>Student Refund List</strong>.</li>
+                    </ol>
+
+                    <div style="margin-top: 20px; text-align: right;">
+                        <button onclick="downloadSampleFile()" class="download-btn"
+                            style="background: #28a745; margin: 0; padding: 10px 20px; font-size: 0.9em;">
+                            Download Sample Format Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="upload-section" id="uploadSection">
+                <h3>Step 1: Upload Egrantz File</h3>
+                <p>Drag and drop your Excel or CSV file here or click to browse</p>
+                <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose File
+                </button>
+                <div id="fileInfo" class="file-info" style="display: none;"></div>
+            </div>
+
+            <div id="masterSection" class="fee-config-section">
+                <div class="section-head">
+                    <h3>Step 2: Compare with Master Sheet</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="file" id="masterInput" style="display: none;" accept=".xlsx,.xls,.csv">
+                        <button class="small-btn" onclick="document.getElementById('masterInput').click()">Upload
+                            Master (Excel/CSV)</button>
+                        <button class="small-btn red" onclick="clearMaster()">Clear Master</button>
+                    </div>
+                </div>
+                <div id="masterInfo" class="hint"></div>
+
+                <h4 class="sub-title">Course Name Mapping</h4>
+                <p class="hint">Course names in the Egrantz file are replaced with the Actual Course Name in all outputs.
+                    It is filled automatically by comparing the degree and subject words with the courses in the master
+                    sheet (e.g. BA HONOURS IN ENGLISH 4 YEAR → BA English, BCOM COOP → BCom). Type a name to set it yourself
+                    (remembered in this browser); clear the box to go back to the automatic name. UG/PG decides which fee
+                    rates apply.</p>
+                <div class="scroll-box" style="max-height: 300px;">
+                    <table class="grid-table" id="courseMapTable"></table>
+                </div>
+                <datalist id="masterCourseList"></datalist>
+
+                <h4 class="sub-title">Student Verification</h4>
+                <div class="inline-field">
+                    <div id="matchSummary"></div>
+                    <label style="font-weight: normal; margin-left: auto;"><input type="checkbox" id="onlyIssues"> Show
+                        only rows needing attention</label>
+                </div>
+                <div class="scroll-box">
+                    <table class="grid-table" id="matchTable"></table>
+                </div>
+            </div>
+
+            <div id="feeConfigSection" class="fee-config-section">
+                <div class="section-head">
+                    <h3>Step 3: Configure Special Fees</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="file" id="feeConfigInput" style="display: none;" accept=".csv,.xlsx,.xls">
+                        <button class="small-btn" onclick="document.getElementById('feeConfigInput').click()">Upload
+                            Fee Config (CSV)</button>
+                        <button class="small-btn green" onclick="downloadFeeConfig()">Download Fee Config</button>
+                    </div>
+                </div>
+
+                <div class="fee-summary">
+                    <div class="summary-title">Data Summary</div>
+                    <div class="summary-grid" id="dataSummary"></div>
+                </div>
+
+                <div class="inline-field">
+                    <label for="refNoInput">Ref No:</label>
+                    <input type="text" id="refNoInput" style="min-width: 320px;">
+                    <span id="sanctionInfo" class="hint" style="margin: 0;"></span>
+                </div>
+
+                <div class="inline-field">
+                    <label for="profileSelect">Fee rates for Academic Year:</label>
+                    <select id="profileSelect"></select>
+                    <span id="detectedAYInfo" class="hint" style="margin: 0;"></span>
+                    <button class="small-btn grey" onclick="copyProfile()">Copy to New Year</button>
+                    <button class="small-btn red" onclick="deleteProfile()">Delete Year</button>
+                </div>
+                <p class="hint">Rates are saved in this browser. Enter 0 where a fee does not apply. The numbers next to
+                    the class names are the student counts in the uploaded file.</p>
+
+                <div class="scroll-box">
+                    <table class="grid-table" id="feeMatrixTable"></table>
+                </div>
+
+                <button id="convertBtn" class="convert-btn">
+                    Convert File with Fee Configuration
+                </button>
+            </div>
+
+            <div id="previewSection" class="preview-section" style="display: none;">
+                <h3 class="preview-title">Preview of Converted Data</h3>
+                <div id="checkBox"></div>
+                <div class="table-container">
+                    <table id="previewTable"></table>
+                </div>
+            </div>
+
+            <div id="disbSection" class="fee-config-section">
+                <h3 class="fee-config-title">Step 4: Disbursement</h3>
+
+                <h4 class="sub-title">Year-wise Defaults</h4>
+                <p class="hint">Choosing a default ticks / unticks the boxes below for all students of that year. You
+                    can then change individual students.</p>
+                <div style="max-width: 600px;">
+                    <table class="grid-table" id="yearDefaultsTable"></table>
+                </div>
+
+                <h4 class="sub-title">Per-Student Disbursement</h4>
+                <p class="hint">
+                    <strong>Refund to Egrantz</strong>: whole amount of the student is returned to Egrantz Dept. Enter
+                    the head of account to which it is remitted.<br>
+                    <strong>Full → Student</strong>: whole amount except ABLC is refunded to the student (ABLC still goes
+                    to Hostel).<br>
+                    <strong>Univ. Special Fees / Exam Fee → Student</strong>: ticked fees are refunded to the student,
+                    unticked fees go to University.<br>
+                    <strong>Partial Tuition</strong>: enter the amount the student already paid; it is refunded to the
+                    student and the balance goes to 0202-01-103-99.
+                </p>
+                <div class="scroll-box">
+                    <table class="grid-table" id="disbTable"></table>
+                </div>
+
+                <h4 class="sub-title">Heads of Account</h4>
+                <p class="hint">Text shown in the Head of Account column of the Account Summary, e.g. the account number
+                    or "Kannur University - A/c No. ...". Saved in this browser; leave blank to use the default.</p>
+                <div style="max-width: 700px;">
+                    <table class="grid-table" id="accountNamesTable"></table>
+                </div>
+
+                <h4 class="sub-title">Account Summary (live)</h4>
+                <div class="scroll-box" style="max-height: none;">
+                    <table class="grid-table" id="accountPreview"></table>
+                </div>
+                <div id="breakupPreview"></div>
+
+                <button id="downloadBtn" class="download-btn">
+                    Download Formatted Excel with Account Summary
+                </button>
+
+                <div id="refundPreviewBox" style="display: none;">
+                    <h4 class="sub-title">Student Refund Report (preview)</h4>
+                    <p class="hint">Mobile No., IFSC and Account No columns are added blank in the downloaded sheet.</p>
+                    <div class="scroll-box">
+                        <table class="grid-table" id="refundPreview"></table>
+                    </div>
+                </div>
+
+                <button id="downloadStudentRefundBtn" class="download-btn"
+                    style="display: none; background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);">
+                    Download Student Refund Excel Sheet
+                </button>
+            </div>
+
+            <div id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        function toggleInstructions() {
+            const content = document.getElementById('instructionContent');
+            const icon = document.querySelector('.toggle-icon');
+            content.classList.toggle('open');
+            if (content.classList.contains('open')) {
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // ---------- Constants ----------
+        const EGRANTZ = 'Refund to Egrantz Dept.';
+        const STUDENT = 'Student Refund';
+        const UNIV = 'University';
+        const HEAD_ORDER = [EGRANTZ, '0202-01-103-99', '0202-01-103-95', 'PD Special Fees', UNIV, STUDENT, 'Hostel'];
+        const YEARS = ['I', 'II', 'III', 'IV'];
+        const CLASSES = ['UG_I', 'UG_II', 'UG_III', 'UG_IV', 'PG_I', 'PG_II'];
+        const CLASS_LABELS = { UG_I: 'UG I', UG_II: 'UG II', UG_III: 'UG III', UG_IV: 'UG IV', PG_I: 'PG I', PG_II: 'PG II' };
+        const AY_START_MONTH = 5; // June: academic year 2024-2025 runs June 2024 to May 2025
+        const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+        // Special fees: default rates used when a new academic year profile is created
+        const specialFees = [
+            { name: 'Admission', abbrev: 'Admn', ugAmount: 80, pgAmount: 160, applicableTo: 'I_YEAR_ONLY' },
+            { name: 'Laboratory', abbrev: 'Lab', ugAmount: 0, pgAmount: 0, applicableTo: 'CALCULATED' },
+            { name: 'Library', abbrev: 'Lib', ugAmount: 105, pgAmount: 105, applicableTo: 'ALL' },
+            { name: 'Calendar', abbrev: 'Cal', ugAmount: 35, pgAmount: 35, applicableTo: 'ALL' },
+            { name: 'Stationery', abbrev: 'Sta', ugAmount: 55, pgAmount: 55, applicableTo: 'ALL' },
+            { name: 'Magazine', abbrev: 'Mag', ugAmount: 55, pgAmount: 55, applicableTo: 'ALL' },
+            { name: 'Association', abbrev: 'Ass', ugAmount: 55, pgAmount: 55, applicableTo: 'ALL' },
+            { name: 'Athletics', abbrev: 'Ath', ugAmount: 110, pgAmount: 110, applicableTo: 'ALL' },
+            { name: 'Audio Visual', abbrev: 'AV', ugAmount: 30, pgAmount: 30, applicableTo: 'ALL' },
+            { name: 'Women Studies', abbrev: 'WS', ugAmount: 10, pgAmount: 10, applicableTo: 'ALL' },
+            { name: 'Medical Inspections', abbrev: 'MI', ugAmount: 10, pgAmount: 10, applicableTo: 'ALL' },
+            { name: 'Poor Student Aid Fund', abbrev: 'SAF', ugAmount: 10, pgAmount: 10, applicableTo: 'ALL' },
+            { name: 'Student Affiliation', abbrev: 'St Af', ugAmount: 125, pgAmount: 245, applicableTo: 'I_YEAR_ONLY' },
+            { name: 'Sports Affiliation', abbrev: 'Sp Af', ugAmount: 300, pgAmount: 300, applicableTo: 'ALL' },
+            { name: 'University Union Fee', abbrev: 'UUF', ugAmount: 110, pgAmount: 110, applicableTo: 'ALL' },
+            { name: 'University Development Fee', abbrev: 'UDF', ugAmount: 60, pgAmount: 60, applicableTo: 'ALL' },
+            { name: 'Matriculation', abbrev: 'Mat', ugAmount: 135, pgAmount: 0, applicableTo: 'I_YEAR_UG_ONLY' },
+            { name: 'Recognition', abbrev: 'Rec', ugAmount: 135, pgAmount: 0, applicableTo: 'I_YEAR_UG_ONLY' }
+        ];
+        const USF_HEADS = ['St Af', 'Sp Af', 'UUF', 'UDF', 'Mat', 'Rec'];
+        const PD_HEADS = ['Sta', 'Mag', 'Ass', 'Ath', 'AV', 'WS', 'MI', 'SAF'];
+        const OUTPUT_FEES = ['TF', 'Exam', ...specialFees.map(f => f.abbrev), 'ABLC'];
+        const FEE_LABELS = { TF: 'Tuition Fee', Exam: 'Exam Fees' };
+
+        // ---------- Helpers ----------
+        const LS = {
+            get(key, fallback) {
+                try {
+                    const v = localStorage.getItem(key);
+                    return v ? JSON.parse(v) : fallback;
+                } catch (e) {
+                    return fallback;
+                }
+            },
+            set(key, value) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(value));
+                } catch (e) { }
+            }
+        };
+
+        function esc(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        const clean = s => String(s ?? '').replace(/\s+/g, ' ').trim();
+        const norm = s => String(s ?? '').toLowerCase().replace(/[^a-z]/g, '');
+        const normAdmn = v => String(v ?? '').trim().replace(/\.0+$/, '');
+        const round = v => Math.round(v * 100) / 100;
+        const sumAmt = list => list.reduce((a, e) => a + e.amt, 0);
+        const uniqueSl = list => [...new Set(list.map(e => e.sl))].join(', ');
+
+        function normAY(v) {
+            const s = String(v ?? '').trim();
+            const m = s.match(/(\d{4})\s*[-\/]\s*(\d{2,4})/);
+            if (m) return `${+m[1]}-${+m[1] + 1}`;
+            const y = s.match(/\d{4}/);
+            return y ? `${+y[0]}-${+y[0] + 1}` : s;
+        }
+
+        // Academic year from the Period column, e.g. "July 2024" -> "2024-2025"
+        function getAcademicYear(period) {
+            if (period === '' || period == null) return '';
+            let y = null, m = null;
+            if (typeof period === 'number') {
+                const d = XLSX.SSF.parse_date_code(period);
+                if (d) { y = d.y; m = d.m - 1; }
+            } else {
+                const s = String(period).trim();
+                const ay = s.match(/(\d{4})\s*[-\/]\s*(\d{2,4})\b/);
+                if (ay && (ay[2].length === 4 ? +ay[2] === +ay[1] + 1 : +ay[2] === (+ay[1] + 1) % 100)) {
+                    return `${+ay[1]}-${+ay[1] + 1}`;
+                }
+                const fullYear = v => v.length === 2 ? 2000 + +v : +v;
+                // "July 2024", "Jul-24", "01-Jul-2024"
+                const mon = s.toLowerCase().match(/([a-z]{3,})[\s\-\/.,]*(\d{4}|\d{2}(?!\d))?/);
+                const yr = s.match(/\d{4}/);
+                const ymd = s.match(/^(\d{4})[\-\/.](\d{1,2})[\-\/.]\d{1,2}/);
+                const dmy = s.match(/^\d{1,2}[\-\/.](\d{1,2})[\-\/.](\d{4}|\d{2})\b/);
+                if (mon && MONTHS.indexOf(mon[1].slice(0, 3)) >= 0 && (mon[2] || yr)) {
+                    m = MONTHS.indexOf(mon[1].slice(0, 3));
+                    y = mon[2] ? fullYear(mon[2]) : +yr[0];
+                } else if (ymd) {
+                    y = +ymd[1];
+                    m = +ymd[2] - 1;
+                } else if (dmy) {
+                    y = fullYear(dmy[2]);
+                    m = +dmy[1] - 1;
+                } else if (yr) {
+                    y = +yr[0];
+                    m = AY_START_MONTH;
+                }
+            }
+            if (y === null) return '';
+            const start = m >= AY_START_MONTH ? y : y - 1;
+            return `${start}-${start + 1}`;
+        }
+
+        function parseYear(text) {
+            const m = String(text || '').toUpperCase().match(/\b(IV|III|II|I|[1-4])\b/);
+            if (!m) return '';
+            return { '1': 'I', '2': 'II', '3': 'III', '4': 'IV' }[m[1]] || m[1];
+        }
+
+        function feeKey(feeType) {
+            const n = norm(feeType);
+            if (n.includes('tuition')) return 'TF';
+            if (n.includes('exam')) return 'Exam';
+            if (n.includes('special')) return 'Special';
+            if (n.includes('ablc') || n.includes('hostel')) return 'ABLC';
+            return null;
+        }
+
+        function findHeaderRow(rows, required) {
+            for (let i = 0; i < Math.min(rows.length, 15); i++) {
+                const cells = (rows[i] || []).map(norm);
+                if (required.every(r => cells.some(c => r.test(c)))) return i;
+            }
+            return -1;
+        }
+
+        function colIndex(headerRow, regex) {
+            return headerRow.map(norm).findIndex(c => regex.test(c));
+        }
+
+        function readSheet(file, onRows) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const isCsv = /\.csv$/i.test(file.name);
+                    // raw for CSV keeps admission numbers and periods as text
+                    const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array', raw: isCsv });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    onRows(XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }));
+                } catch (error) {
+                    console.error(error);
+                    showStatus(`Error reading ${esc(file.name)}: ${esc(error.message)}`, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function downloadText(text, name) {
+            const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // ---------- State ----------
+        let originalData = null;
+        let fileName = '';
+        let refInfo = { refNo: '', sanction: null };
+        let studentData = [];
+        let unknownFees = {};
+        let detectedAY = '';
+        let currentAY = '';
+        let masterData = LS.get('egz_master', []);
+        let courseMap = LS.get('egz_courseMap', {});
+        let feeProfiles = LS.get('egz_feeProfiles', {});
+        let yearDefaults = LS.get('egz_yearDefaults', { usf: {}, exam: {} });
+        let accountNames = LS.get('egz_accountNames', {});
+        let disbState = {};
+        let convertedData = null;
+        let convertedRows = null;
+        let convertedActive = null;
+
+        // ---------- Elements ----------
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInfo = document.getElementById('fileInfo');
+        const masterSection = document.getElementById('masterSection');
+        const feeConfigSection = document.getElementById('feeConfigSection');
+        const convertBtn = document.getElementById('convertBtn');
+        const status = document.getElementById('status');
+        const previewSection = document.getElementById('previewSection');
+        const disbSection = document.getElementById('disbSection');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const downloadStudentRefundBtn = document.getElementById('downloadStudentRefundBtn');
+        const matchTable = document.getElementById('matchTable');
+        const courseMapTable = document.getElementById('courseMapTable');
+        const feeMatrixTable = document.getElementById('feeMatrixTable');
+        const disbTable = document.getElementById('disbTable');
+        const profileSelect = document.getElementById('profileSelect');
+        const refNoInput = document.getElementById('refNoInput');
+
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+            fileInput.value = '';
+        });
+        document.getElementById('masterInput').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleMasterFile(e.target.files[0]);
+            e.target.value = '';
+        });
+        document.getElementById('feeConfigInput').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFeeConfigFile(e.target.files[0]);
+            e.target.value = '';
+        });
+        document.getElementById('onlyIssues').addEventListener('change', renderMatchTable);
+        convertBtn.addEventListener('click', () => convertFile(false));
+        downloadBtn.addEventListener('click', downloadFile);
+        downloadStudentRefundBtn.addEventListener('click', downloadStudentRefundFile);
+        refNoInput.addEventListener('change', () => {
+            refInfo.refNo = clean(refNoInput.value);
+            refreshAfterChange();
+        });
+        profileSelect.addEventListener('change', () => {
+            currentAY = profileSelect.value;
+            renderFeeMatrix();
+            refreshAfterChange();
+        });
+
+        // ---------- Egrantz file ----------
+        function handleFile(file) {
+            if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
+                showStatus('Please select a valid Excel or CSV file (.xlsx, .xls or .csv)', 'error');
+                return;
+            }
+
+            readSheet(file, rows => {
+                parseEgrantz(rows);
+                originalData = rows;
+                fileName = file.name.replace(/\.(xlsx|xls|csv)$/i, '');
+                fileInfo.innerHTML = `
+                    <strong>File:</strong> ${esc(file.name)}<br>
+                    <strong>Size:</strong> ${(file.size / 1024).toFixed(2)} KB<br>
+                    <strong>Students:</strong> ${studentData.length}
+                `;
+                fileInfo.style.display = 'block';
+
+                disbState = {};
+                convertedData = null;
+                convertedRows = null;
+                previewSection.style.display = 'none';
+                disbSection.style.display = 'none';
+
+                // Most common academic year among the periods
+                const ayCounts = {};
+                studentData.forEach(s => {
+                    const ay = getAcademicYear(s.period);
+                    if (ay) ayCounts[ay] = (ayCounts[ay] || 0) + 1;
+                });
+                detectedAY = Object.keys(ayCounts).sort((a, b) => ayCounts[b] - ayCounts[a])[0] || '';
+                currentAY = ensureProfile(detectedAY || 'Default');
+
+                refNoInput.value = refInfo.refNo;
+                document.getElementById('sanctionInfo').textContent = refInfo.sanction !== null
+                    ? `Sanctioned amount: ₹${refInfo.sanction}` : 'Sanctioned amount not found in the reference row';
+
+                runMatching();
+                renderMaster();
+                renderSummary();
+                renderProfileSelect();
+                renderFeeMatrix();
+                masterSection.style.display = 'block';
+                feeConfigSection.style.display = 'block';
+
+                showStatus('File loaded successfully. Check the master comparison, configure fees and convert.', 'success');
+            });
+        }
+
+        function parseEgrantz(rows) {
+            const nameRe = /^(student)?name$/;
+            const hdr = findHeaderRow(rows, [nameRe, /^feetype$/]);
+            let C, start;
+            if (hdr >= 0) {
+                const h = rows[hdr];
+                C = {
+                    name: colIndex(h, nameRe), admn: colIndex(h, /^adm/), category: colIndex(h, /^categ/),
+                    course: colIndex(h, /^course/), year: colIndex(h, /^year$/), feeType: colIndex(h, /^feetype$/),
+                    period: colIndex(h, /^period/), amount: colIndex(h, /^amount/)
+                };
+                ['course', 'year', 'amount'].forEach(k => {
+                    if (C[k] < 0) throw new Error(`Column "${k}" not found in the header row`);
+                });
+                start = hdr + 1;
+            } else {
+                // Fallback: original fixed layout (reference row, header row, data)
+                C = { name: 1, admn: 2, category: 3, course: 4, year: 5, feeType: 6, period: 7, amount: 8 };
+                start = 2;
+            }
+
+            // Reference row, e.g. "GE001202605080000192(63000)"
+            refInfo = { refNo: '', sanction: null };
+            for (let i = 0; i < (hdr >= 0 ? hdr : 1); i++) {
+                const cell = (rows[i] || []).find(c => clean(c));
+                if (cell !== undefined) {
+                    refInfo.refNo = clean(cell).replace(/^File Reference No:\s*/i, '');
+                    const m = refInfo.refNo.match(/\(\s*([\d,]+(?:\.\d+)?)\s*\)\s*$/);
+                    if (m) refInfo.sanction = parseFloat(m[1].replace(/,/g, ''));
+                    break;
+                }
+            }
+
+            const get = (row, key) => C[key] >= 0 ? row[C[key]] : '';
+            const studentMap = new Map();
+            unknownFees = {};
+
+            rows.slice(start).forEach(row => {
+                if (!row) return;
+                const name = clean(get(row, 'name'));
+                if (!name) return;
+                const admn = normAdmn(get(row, 'admn'));
+                const course = clean(get(row, 'course'));
+                const yearText = clean(get(row, 'year'));
+                const key = `${name}_${admn || 'BLANK'}_${course}_${yearText}`;
+
+                if (!studentMap.has(key)) {
+                    studentMap.set(key, {
+                        id: key,
+                        egName: name,
+                        egAdmn: admn,
+                        category: clean(get(row, 'category')),
+                        egCourse: course,
+                        yearText: yearText,
+                        yearNum: parseYear(yearText),
+                        period: get(row, 'period'),
+                        fees: { TF: 0, Exam: 0, Special: 0, ABLC: 0 },
+                        name: name,
+                        admissionNo: admn,
+                        masterIdx: null,
+                        matchStatus: '',
+                        candidates: [],
+                        manual: false
+                    });
+                }
+
+                const student = studentMap.get(key);
+                const feeType = clean(get(row, 'feeType'));
+                const amount = parseFloat(String(get(row, 'amount')).replace(/,/g, '')) || 0;
+                const k = feeKey(feeType);
+                if (k) student.fees[k] += amount;
+                else if (amount) unknownFees[feeType] = (unknownFees[feeType] || 0) + amount;
+            });
+
+            studentData = Array.from(studentMap.values());
+            if (!studentData.length) throw new Error('No student rows found in the file');
+        }
+
+        // ---------- Course mapping ----------
+        function guessType(course) {
+            return /^M/i.test(clean(course)) ? 'PG' : 'UG';
+        }
+
+        // "BA ENGLISH", "BA English" and "B.A. English" are the same course
+        function courseKey(course) {
+            return clean(course).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        }
+
+        // Spelling used in the master sheet for a course name, if the master has it
+        function masterSpelling(course) {
+            const m = masterData.find(x => x.course && courseKey(x.course) === courseKey(course));
+            return m ? m.course : clean(course);
+        }
+
+        function courseEntry(s) {
+            return courseMap[courseKey(s.egCourse)];
+        }
+
+        function finalCourse(s) {
+            const entry = courseEntry(s);
+            return (entry && entry.course) || s.egCourse;
+        }
+
+        function courseType(s) {
+            const entry = courseEntry(s);
+            return (entry && entry.type) || guessType(finalCourse(s));
+        }
+
+        // Course map saved before keys ignored case: re-key it
+        Object.keys(courseMap).forEach(k => {
+            const key = courseKey(k);
+            if (key !== k) {
+                if (!courseMap[key] || courseMap[k].user) courseMap[key] = courseMap[k];
+                delete courseMap[k];
+            }
+        });
+
+        function categorizeStudent(s) {
+            return { courseType: courseType(s), yearNum: s.yearNum };
+        }
+
+        function classOf(s) {
+            return `${courseType(s)}_${s.yearNum}`;
+        }
+
+        const COURSE_NOISE = new Set(['HONOURS', 'HONOUR', 'HONS', 'HONORS', 'HONOR', 'IN', 'WITH', 'SPECIALIZATION',
+            'SPECIALISATION', 'YEAR', 'YEARS', 'AND', 'OF', 'THE', 'PROGRAMME', 'PROGRAM', 'DEGREE', 'COURSE']);
+
+        // "BA HONOURS IN ENGLISH 4 YEAR" -> { degree: 'BA', subject: ['ENGLISH'] }; "B.Com" -> { degree: 'BCOM' }
+        function courseTokens(name) {
+            const words = clean(name).toUpperCase().replace(/\./g, '').split(/[^A-Z0-9]+/).filter(Boolean);
+            if (words.length > 1 && /^[BM]$/.test(words[0])) words.splice(0, 2, words[0] + words[1]);
+            return {
+                degree: words[0] || '',
+                subject: words.slice(1).filter(w => !COURSE_NOISE.has(w) && !/^\d+$/.test(w))
+            };
+        }
+
+        // Actual course for an Egrantz course name: same degree, most subject words in common
+        function suggestCourse(egCourse, actualCourses) {
+            const eg = courseTokens(egCourse);
+            const scored = actualCourses
+                .map(a => {
+                    const t = courseTokens(a);
+                    const overlap = t.subject.filter(w => eg.subject.includes(w)).length;
+                    return { a, degree: t.degree, overlap, extra: t.subject.length - overlap };
+                })
+                .filter(x => x.degree === eg.degree)
+                .sort((x, y) => y.overlap - x.overlap || x.extra - y.extra);
+            const [best, second] = scored;
+            if (!best) return null;
+            if (second && second.overlap === best.overlap && second.extra === best.extra) return null;
+            // No subject word in common: only when it is the plain degree (e.g. BCOM COOP -> BCom)
+            if (best.overlap === 0 && best.extra > 0) return null;
+            return best.a;
+        }
+
+        // Actual course names: courses in the master sheet plus names you have entered
+        function actualCourses() {
+            const names = [...masterData.map(m => m.course), ...Object.values(courseMap).filter(e => e.user).map(e => e.course)]
+                .filter(Boolean).map(masterSpelling);
+            const byKey = new Map();
+            names.forEach(n => { if (!byKey.has(courseKey(n))) byKey.set(courseKey(n), n); });
+            return [...byKey.values()].sort();
+        }
+
+        // Fill the course map from course names; entries you set yourself are kept
+        function suggestCourses() {
+            const actual = actualCourses();
+            studentData.forEach(s => {
+                const key = courseKey(s.egCourse);
+                if (courseMap[key] && courseMap[key].user) return;
+                const suggested = suggestCourse(s.egCourse, actual);
+                courseMap[key] = suggested
+                    ? { course: suggested, type: guessType(suggested), user: false }
+                    : { course: s.egCourse, type: guessType(s.egCourse), user: false, unmapped: true };
+            });
+            saveCourseMap();
+        }
+
+        // Only your own entries are saved; suggestions are recalculated every time
+        function saveCourseMap() {
+            LS.set('egz_courseMap', Object.fromEntries(Object.entries(courseMap).filter(([, e]) => e.user)));
+        }
+
+        function renderCourseMap() {
+            // One row per course, whatever the case / spacing of its spellings in Egrantz
+            const groups = new Map();
+            studentData.forEach(s => {
+                const key = courseKey(s.egCourse);
+                if (!groups.has(key)) groups.set(key, { spellings: new Set(), count: 0 });
+                groups.get(key).spellings.add(s.egCourse);
+                groups.get(key).count++;
+            });
+            document.getElementById('masterCourseList').innerHTML = actualCourses().map(c => `<option value="${esc(c)}">`).join('');
+
+            let html = '<tr><th>Course Name in Egrantz</th><th>Students</th><th>Mapping</th><th>Actual Course Name</th><th>UG / PG</th></tr>';
+            groups.forEach((g, key) => {
+                const first = [...g.spellings][0];
+                const entry = courseMap[key] || { course: first, type: guessType(first), unmapped: true };
+                const badge = entry.user ? '<span class="badge fix">Set by you</span>'
+                    : entry.unmapped ? '<span class="badge bad">Not mapped</span>' : '<span class="badge ok">Auto</span>';
+                html += `<tr>
+                    <td>${[...g.spellings].map(esc).join('<br>')}</td>
+                    <td class="num">${g.count}</td>
+                    <td>${badge}</td>
+                    <td><input type="text" list="masterCourseList" data-ec="${esc(key)}" data-k="course" value="${esc(entry.course)}" style="width: 260px;"></td>
+                    <td><select data-ec="${esc(key)}" data-k="type">
+                        <option value="UG" ${entry.type === 'UG' ? 'selected' : ''}>UG</option>
+                        <option value="PG" ${entry.type === 'PG' ? 'selected' : ''}>PG</option>
+                    </select></td>
+                </tr>`;
+            });
+            courseMapTable.innerHTML = html;
+        }
+
+        courseMapTable.addEventListener('change', (e) => {
+            const el = e.target;
+            const key = el.dataset.ec;
+            if (key === undefined) return;
+            const egSpelling = (studentData.find(s => courseKey(s.egCourse) === key) || {}).egCourse || key;
+            const entry = { ...(courseMap[key] || { course: egSpelling, type: guessType(egSpelling) }) };
+            delete entry.unmapped;
+            if (el.dataset.k === 'course' && !clean(el.value)) {
+                // Cleared: go back to the automatic mapping
+                delete courseMap[key];
+            } else {
+                if (el.dataset.k === 'course') {
+                    // Typing "BA ENGLISH" uses the master's spelling "BA English"
+                    entry.course = masterSpelling(clean(el.value));
+                    entry.type = guessType(entry.course);
+                } else {
+                    entry.type = el.value;
+                }
+                entry.user = true;
+                courseMap[key] = entry;
+            }
+            saveCourseMap();
+            runMatching();
+            renderCourseMap();
+            renderMatchTable();
+            renderSummary();
+            renderFeeMatrix();
+            refreshAfterChange();
+        });
+
+        // ---------- Master sheet ----------
+        function handleMasterFile(file) {
+            if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
+                showStatus('Master sheet must be an Excel or CSV file', 'error');
+                return;
+            }
+            readSheet(file, rows => {
+                const hdr = findHeaderRow(rows, [/name/, /^adm/]);
+                if (hdr < 0) throw new Error('Header row with "Adm. No." and "Student Name" not found');
+                const h = rows[hdr];
+                const ci = {
+                    admn: colIndex(h, /^adm/), name: colIndex(h, /name/),
+                    course: colIndex(h, /course|programme|program|class/), ay: colIndex(h, /academic|batch|^year/)
+                };
+                masterData = rows.slice(hdr + 1).map(r => ({
+                    admn: normAdmn(r[ci.admn]),
+                    name: clean(r[ci.name]),
+                    course: ci.course >= 0 ? clean(r[ci.course]) : '',
+                    ay: ci.ay >= 0 ? normAY(r[ci.ay]) : ''
+                })).filter(m => m.name);
+                LS.set('egz_master', masterData);
+                studentData.forEach(s => { s.manual = false; });
+                runMatching();
+                renderMaster();
+                renderSummary();
+                renderFeeMatrix();
+                refreshAfterChange();
+                showStatus(`Master sheet loaded: ${masterData.length} students.`, 'success');
+            });
+        }
+
+        function clearMaster() {
+            if (!masterData.length) return;
+            if (!confirm('Remove the saved master sheet from this browser?')) return;
+            masterData = [];
+            LS.set('egz_master', masterData);
+            studentData.forEach(s => { s.manual = false; });
+            runMatching();
+            renderMaster();
+            refreshAfterChange();
+        }
+
+        function nameKey(s) {
+            return String(s || '').toUpperCase().replace(/[^A-Z]/g, '');
+        }
+
+        function levenshtein(a, b) {
+            const dp = Array.from({ length: b.length + 1 }, (_, i) => i);
+            for (let i = 1; i <= a.length; i++) {
+                let prev = dp[0];
+                dp[0] = i;
+                for (let j = 1; j <= b.length; j++) {
+                    const tmp = dp[j];
+                    dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+                    prev = tmp;
+                }
+            }
+            return dp[b.length];
+        }
+
+        // 0..1 similarity, ignoring case, spaces, dots and the order of initials
+        function nameScore(a, b) {
+            const ka = nameKey(a), kb = nameKey(b);
+            if (!ka || !kb) return 0;
+            if (ka === kb) return 1;
+            const ratio = (x, y) => 1 - levenshtein(x, y) / Math.max(x.length, y.length);
+            const sorted = s => String(s).toUpperCase().split(/[^A-Z]+/).filter(Boolean).sort().join('');
+            let score = Math.max(ratio(ka, kb), ratio(sorted(a), sorted(b)));
+            const [short, long] = ka.length <= kb.length ? [ka, kb] : [kb, ka];
+            if (short.length >= 5 && long.startsWith(short)) score = Math.max(score, 0.85);
+            return score;
+        }
+
+        // Admission batch expected in the master, e.g. II Year in 2024-2025 -> 2023-2024
+        function batchFor(s) {
+            const ay = getAcademicYear(s.period);
+            const yi = YEARS.indexOf(s.yearNum);
+            if (!ay || yi < 0) return '';
+            const b = +ay.slice(0, 4) - yi;
+            return `${b}-${b + 1}`;
+        }
+
+        function sameCourseBatch(s, m) {
+            const batch = batchFor(s);
+            return (!m.course || norm(m.course) === norm(finalCourse(s))) && (!m.ay || !batch || m.ay === batch);
+        }
+
+        function applyMatch(s) {
+            if (s.masterIdx !== null && masterData[s.masterIdx]) {
+                s.name = masterData[s.masterIdx].name;
+                s.admissionNo = masterData[s.masterIdx].admn;
+            } else {
+                s.name = s.egName;
+                s.admissionNo = s.egAdmn;
+            }
+        }
+
+        function runMatching() {
+            if (!masterData.length) {
+                studentData.forEach(s => {
+                    if (s.manual) return;
+                    s.masterIdx = null;
+                    s.candidates = [];
+                    s.note = '';
+                    s.matchStatus = 'nomaster';
+                    applyMatch(s);
+                });
+                suggestCourses();
+                return;
+            }
+
+            const byAdmn = new Map();
+            masterData.forEach((m, i) => { if (m.admn) byAdmn.set(m.admn, i); });
+
+            const acceptAdmn = (s, i) => {
+                s.masterIdx = i;
+                s.matchStatus = clean(s.egName).toUpperCase() === masterData[i].name.toUpperCase() ? 'exact' : 'corrected';
+            };
+
+            // Pass 1: admission number, accepted only when the name agrees
+            // (a less similar name is accepted only when course and batch also agree)
+            const pending = [];
+            studentData.forEach(s => {
+                if (s.manual) return;
+                s.masterIdx = null;
+                s.candidates = [];
+                s.note = '';
+                s.admnHolder = null;
+                if (s.egAdmn && byAdmn.has(s.egAdmn)) {
+                    const i = byAdmn.get(s.egAdmn);
+                    const score = nameScore(s.egName, masterData[i].name);
+                    if (score >= 0.9) acceptAdmn(s, i);
+                    else pending.push({ s, i, score });
+                }
+            });
+
+            suggestCourses();
+
+            pending.forEach(({ s, i, score }) => {
+                if (score >= 0.75 && sameCourseBatch(s, masterData[i])) {
+                    acceptAdmn(s, i);
+                } else {
+                    // Wrong admission number in Egrantz: it belongs to another student
+                    s.admnHolder = i;
+                    s.note = `Adm No ${s.egAdmn} belongs to ${masterData[i].name} (${masterData[i].course})`;
+                }
+            });
+
+            // Pass 2: name within the same course and admission batch
+            const taken = new Set(studentData.filter(s => s.masterIdx !== null).map(s => s.masterIdx));
+            studentData.forEach(s => {
+                if (s.manual || s.masterIdx !== null) return;
+                const course = courseKey(finalCourse(s));
+                const batch = batchFor(s);
+                const sameCourse = i => !masterData[i].course || courseKey(masterData[i].course) === course;
+                const score = pool => pool.map(i => ({ i, score: nameScore(s.egName, masterData[i].name) }))
+                    .sort((a, b) => b.score - a.score);
+
+                const scored = score(masterData.map((m, i) => i).filter(i =>
+                    !taken.has(i) && sameCourse(i) && (!batch || !masterData[i].ay || masterData[i].ay === batch)));
+                // Batch not in the master: offer same-course names to pick from, but never match automatically
+                const offered = scored.length ? scored : score(masterData.map((m, i) => i).filter(i => !taken.has(i) && sameCourse(i)));
+                s.candidates = offered.slice(0, 5).filter(x => x.score >= 0.4).map(x => x.i);
+                const [best, second] = scored;
+                const wrongAdmn = s.admnHolder !== null;
+                if (best && best.score >= 0.9 && (!second || best.score - second.score >= 0.1)) {
+                    s.masterIdx = best.i;
+                    taken.add(best.i);
+                    s.matchStatus = wrongAdmn ? 'admnfixed' : 'auto';
+                } else if (!scored.length && !wrongAdmn) {
+                    s.matchStatus = 'nobatch';
+                } else {
+                    s.matchStatus = wrongAdmn ? 'check' : s.candidates.length ? 'ambiguous' : 'notfound';
+                }
+                if (wrongAdmn && !s.candidates.includes(s.admnHolder)) s.candidates.push(s.admnHolder);
+            });
+
+            // Two Egrantz students pointing to the same master record
+            const used = {};
+            studentData.forEach(s => { if (s.masterIdx !== null) used[s.masterIdx] = (used[s.masterIdx] || 0) + 1; });
+            studentData.forEach(s => {
+                if (!s.manual && s.masterIdx !== null && used[s.masterIdx] > 1) s.matchStatus = 'duplicate';
+            });
+
+            studentData.forEach(s => { if (!s.manual) applyMatch(s); });
+        }
+
+        const MATCH_STATUS = {
+            exact: { label: 'Exact match', cls: 'ok', ok: true },
+            corrected: { label: 'Name corrected', cls: 'fix', ok: true },
+            auto: { label: 'Matched by name', cls: 'fix', ok: true },
+            manual: { label: 'Set manually', cls: 'fix', ok: true },
+            admnfixed: { label: 'Adm No corrected', cls: 'warn', ok: true },
+            check: { label: 'Adm No belongs to another student', cls: 'bad', ok: false },
+            duplicate: { label: 'Same master record twice', cls: 'bad', ok: false },
+            ambiguous: { label: 'Select match', cls: 'warn', ok: false },
+            notfound: { label: 'Not in master', cls: 'bad', ok: false },
+            nobatch: { label: 'Course/batch not in master', cls: 'warn', ok: true },
+            nomaster: { label: '', cls: '', ok: true }
+        };
+
+        function statusOf(s) {
+            return MATCH_STATUS[s.manual ? 'manual' : s.matchStatus] || MATCH_STATUS.nomaster;
+        }
+
+        function renderMaster() {
+            const info = document.getElementById('masterInfo');
+            if (masterData.length) {
+                const courses = [...new Set(masterData.map(m => m.course).filter(Boolean))];
+                info.innerHTML = `<strong>Master loaded:</strong> ${masterData.length} students (saved in this browser). Courses: ${esc(courses.join(', '))}`;
+            } else {
+                info.innerHTML = 'No master sheet loaded. Upload one to correct names and fill blank admission numbers.';
+            }
+            renderCourseMap();
+            renderMatchTable();
+        }
+
+        function renderMatchTable() {
+            const only = document.getElementById('onlyIssues').checked;
+            const hasMaster = masterData.length > 0;
+            let html = `<tr><th>Sl</th><th>Egrantz Name</th><th>Egrantz Adm No</th><th>Course</th><th>Year</th>
+                ${hasMaster ? '<th>Status</th><th>Master Record</th>' : ''}<th>Name Used</th><th>Adm No Used</th></tr>`;
+
+            studentData.forEach((s, i) => {
+                const st = statusOf(s);
+                if (only && st.ok) return;
+                let cells = '';
+                if (hasMaster) {
+                    const opts = [...new Set([...(s.masterIdx !== null ? [s.masterIdx] : []), ...s.candidates])];
+                    cells = `<td style="white-space: normal; min-width: 160px;"><span class="badge ${st.cls}" data-badge="${i}">${st.label}</span>${s.note && !s.manual ? `<br><small style="color: #856404;">${esc(s.note)}</small>` : ''}</td>
+                        <td><select data-i="${i}" data-k="master">
+                            <option value="">— Keep Egrantz data —</option>
+                            ${opts.map(mi => {
+                        const m = masterData[mi];
+                        return `<option value="${mi}" ${mi === s.masterIdx ? 'selected' : ''}>${esc(m.admn)} – ${esc(m.name)} (${esc(m.course)}${m.ay ? ', ' + esc(m.ay) : ''})</option>`;
+                    }).join('')}
+                        </select></td>`;
+                }
+                html += `<tr>
+                    <td>${i + 1}</td>
+                    <td>${esc(s.egName)}</td>
+                    <td>${s.egAdmn ? esc(s.egAdmn) : '<span class="badge bad">blank</span>'}</td>
+                    <td>${esc(finalCourse(s))}</td>
+                    <td>${esc(s.yearNum || s.yearText)}</td>
+                    ${cells}
+                    <td><input type="text" data-i="${i}" data-k="name" value="${esc(s.name)}" style="width: 200px;"></td>
+                    <td><input type="text" data-i="${i}" data-k="admn" value="${esc(s.admissionNo)}" style="width: 90px;"></td>
+                </tr>`;
+            });
+            matchTable.innerHTML = html;
+
+            const summary = document.getElementById('matchSummary');
+            if (!hasMaster) {
+                summary.innerHTML = '';
+                return;
+            }
+            const counts = {};
+            studentData.forEach(s => {
+                const st = statusOf(s);
+                if (st.label) counts[st.label] = { n: (counts[st.label] ? counts[st.label].n : 0) + 1, cls: st.cls };
+            });
+            summary.innerHTML = Object.keys(counts).map(l => `<span class="badge ${counts[l].cls}">${l}: ${counts[l].n}</span>`).join(' ');
+        }
+
+        matchTable.addEventListener('change', (e) => {
+            const el = e.target;
+            const s = studentData[+el.dataset.i];
+            if (!s) return;
+            s.manual = true;
+            if (el.dataset.k === 'master') {
+                s.masterIdx = el.value === '' ? null : +el.value;
+                applyMatch(s);
+                renderMatchTable();
+            } else {
+                if (el.dataset.k === 'name') {
+                    s.name = clean(el.value);
+                } else {
+                    s.admissionNo = normAdmn(el.value);
+                    const mi = masterData.findIndex(m => m.admn && m.admn === s.admissionNo);
+                    // Take the master name only when it is the same student
+                    if (mi >= 0 && nameScore(s.egName, masterData[mi].name) >= 0.75) {
+                        s.masterIdx = mi;
+                        s.name = masterData[mi].name;
+                        const nameInput = matchTable.querySelector(`input[data-i="${el.dataset.i}"][data-k="name"]`);
+                        if (nameInput) nameInput.value = s.name;
+                    }
+                }
+                const badge = matchTable.querySelector(`[data-badge="${el.dataset.i}"]`);
+                if (badge) {
+                    badge.className = 'badge fix';
+                    badge.textContent = MATCH_STATUS.manual.label;
+                }
+            }
+            refreshAfterChange();
+        });
+
+        // ---------- Summary ----------
+        function renderSummary() {
+            const count = fn => studentData.filter(fn).length;
+            const items = [
+                [studentData.length, 'Total Students'],
+                [count(s => courseType(s) === 'UG'), 'UG Students'],
+                [count(s => courseType(s) === 'PG'), 'PG Students'],
+                ...YEARS.map(y => [count(s => s.yearNum === y), `${y} Year`]).filter(x => x[0] > 0)
+            ];
+            document.getElementById('dataSummary').innerHTML = items.map(([n, label]) => `
+                <div class="summary-item">
+                    <div class="summary-count">${n}</div>
+                    <div class="summary-label">${label}</div>
+                </div>`).join('');
+        }
+
+        // ---------- Fee profiles ----------
+        function ratesFrom(ugAmount, pgAmount, applicableTo) {
+            const row = {};
+            CLASSES.forEach(c => {
+                const [type, year] = c.split('_');
+                const base = type === 'UG' ? ugAmount : pgAmount;
+                let v = 0;
+                if (applicableTo === 'ALL') v = base;
+                else if (applicableTo === 'I_YEAR_ONLY') v = year === 'I' ? base : 0;
+                else if (applicableTo === 'I_YEAR_UG_ONLY') v = (type === 'UG' && year === 'I') ? base : 0;
+                row[c] = v;
+            });
+            return row;
+        }
+
+        function defaultRates() {
+            const rates = {};
+            specialFees.forEach(f => {
+                if (f.abbrev !== 'Lab') rates[f.abbrev] = ratesFrom(f.ugAmount, f.pgAmount, f.applicableTo);
+            });
+            return rates;
+        }
+
+        function saveProfiles() {
+            LS.set('egz_feeProfiles', feeProfiles);
+        }
+
+        // Creates the profile if missing (copied from the latest saved year, else defaults)
+        function ensureProfile(ay) {
+            if (!feeProfiles[ay]) {
+                const keys = Object.keys(feeProfiles).sort();
+                feeProfiles[ay] = keys.length ? JSON.parse(JSON.stringify(feeProfiles[keys[keys.length - 1]])) : defaultRates();
+            }
+            const profile = feeProfiles[ay];
+            const defaults = defaultRates();
+            Object.keys(defaults).forEach(k => {
+                profile[k] = profile[k] || defaults[k];
+                CLASSES.forEach(c => {
+                    if (typeof profile[k][c] !== 'number') profile[k][c] = defaults[k][c];
+                });
+            });
+            saveProfiles();
+            return ay;
+        }
+
+        function rateFor(s, abbrev) {
+            const profile = feeProfiles[currentAY];
+            return (profile && profile[abbrev] && profile[abbrev][classOf(s)]) || 0;
+        }
+
+        function renderProfileSelect() {
+            profileSelect.innerHTML = Object.keys(feeProfiles).sort()
+                .map(ay => `<option value="${esc(ay)}" ${ay === currentAY ? 'selected' : ''}>${esc(ay)}</option>`).join('');
+            document.getElementById('detectedAYInfo').textContent = detectedAY
+                ? `(detected from Period: ${detectedAY})` : '(academic year could not be detected from Period)';
+        }
+
+        function copyProfile() {
+            const ay = prompt('New academic year (e.g. 2025-2026):', '');
+            if (!ay) return;
+            const key = normAY(ay);
+            if (feeProfiles[key] && !confirm(`${key} already exists. Overwrite it with the rates of ${currentAY}?`)) return;
+            feeProfiles[key] = JSON.parse(JSON.stringify(feeProfiles[currentAY]));
+            saveProfiles();
+            currentAY = key;
+            renderProfileSelect();
+            renderFeeMatrix();
+            refreshAfterChange();
+        }
+
+        function deleteProfile() {
+            if (Object.keys(feeProfiles).length <= 1) {
+                showStatus('At least one academic year must remain', 'error');
+                return;
+            }
+            if (!confirm(`Delete fee rates of ${currentAY}?`)) return;
+            delete feeProfiles[currentAY];
+            saveProfiles();
+            currentAY = ensureProfile(feeProfiles[detectedAY] ? detectedAY : Object.keys(feeProfiles).sort().pop());
+            renderProfileSelect();
+            renderFeeMatrix();
+            refreshAfterChange();
+        }
+
+        function renderFeeMatrix() {
+            const profile = feeProfiles[currentAY];
+            if (!profile) return;
+            const byClass = {};
+            studentData.forEach(s => { (byClass[classOf(s)] = byClass[classOf(s)] || []).push(s); });
+
+            let html = `<tr><th>Fee</th><th>Abbr</th>${CLASSES.map(c => `<th>${CLASS_LABELS[c]}${byClass[c] ? ` <span class="badge ok">${byClass[c].length}</span>` : ''}</th>`).join('')}</tr>`;
+            specialFees.forEach(f => {
+                if (f.abbrev === 'Lab') {
+                    html += `<tr><td>${f.name}</td><td>${f.abbrev}</td><td colspan="${CLASSES.length}" style="background: #fff3cd;">Calculated per student = Special Fee − other fees</td></tr>`;
+                    return;
+                }
+                html += `<tr><td>${f.name}</td><td>${f.abbrev}</td>${CLASSES.map(c =>
+                    `<td><input type="number" min="0" step="any" data-f="${esc(f.abbrev)}" data-c="${c}" value="${profile[f.abbrev][c]}"></td>`).join('')}</tr>`;
+            });
+
+            const totals = CLASSES.map(c => Object.keys(profile).reduce((a, k) => a + (profile[k][c] || 0), 0));
+            const specials = CLASSES.map(c => [...new Set((byClass[c] || []).map(s => s.fees.Special))]);
+            html += `<tr class="info-row"><td colspan="2">Total of fees above</td>${totals.map(t => `<td class="num">${round(t)}</td>`).join('')}</tr>`;
+            html += `<tr class="info-row"><td colspan="2">Special Fee in Egrantz file</td>${specials.map(v => `<td class="num">${v.join(' / ') || '–'}</td>`).join('')}</tr>`;
+            html += `<tr class="info-row"><td colspan="2">Lab fee (calculated)</td>${specials.map((v, i) => {
+                const labs = v.filter(x => x > 0).map(x => round(x - totals[i]));
+                return `<td class="num" style="${labs.some(l => l < 0) ? 'color: #c0392b;' : ''}">${labs.join(' / ') || '–'}</td>`;
+            }).join('')}</tr>`;
+            feeMatrixTable.innerHTML = html;
+        }
+
+        feeMatrixTable.addEventListener('change', (e) => {
+            const el = e.target;
+            if (!el.dataset.f) return;
+            feeProfiles[currentAY][el.dataset.f][el.dataset.c] = parseFloat(el.value) || 0;
+            saveProfiles();
+            renderFeeMatrix();
+            refreshAfterChange();
+        });
+
+        function downloadFeeConfig() {
+            const profile = feeProfiles[currentAY];
+            if (!profile) {
+                showStatus('Upload an Egrantz file first', 'error');
+                return;
+            }
+            const aoa = [['Fee Name', 'Abbreviation', ...CLASSES.map(c => CLASS_LABELS[c])]];
+            specialFees.filter(f => f.abbrev !== 'Lab').forEach(f => {
+                aoa.push([f.name, f.abbrev, ...CLASSES.map(c => profile[f.abbrev][c])]);
+            });
+            downloadText(XLSX.utils.sheet_to_csv(XLSX.utils.aoa_to_sheet(aoa)), `fee_config_${currentAY}.csv`);
+            showStatus(`Fee configuration of ${esc(currentAY)} downloaded!`, 'success');
+        }
+
+        // Accepts the new layout (UG I ... PG II columns) and the old one (UG Amount, PG Amount, Applicable To)
+        function handleFeeConfigFile(file) {
+            if (!feeProfiles[currentAY]) {
+                showStatus('Upload an Egrantz file first', 'error');
+                return;
+            }
+            readSheet(file, rows => {
+                const hdr = findHeaderRow(rows, [/^abbrev/]);
+                if (hdr < 0) throw new Error('Header row with "Abbreviation" not found');
+                const h = rows[hdr].map(norm);
+                const ai = h.findIndex(c => /^abbrev/.test(c));
+                const legacy = h.includes('ugamount');
+                const classIdx = {};
+                CLASSES.forEach(c => { classIdx[c] = h.indexOf(norm(CLASS_LABELS[c])); });
+                const profile = feeProfiles[currentAY];
+                let updated = 0;
+
+                rows.slice(hdr + 1).forEach(r => {
+                    const abbrev = clean(r[ai]);
+                    const fee = specialFees.find(f => f.abbrev === abbrev);
+                    if (!fee || abbrev === 'Lab') return;
+                    if (legacy) {
+                        const applicable = clean(r[h.indexOf('applicableto')]) || fee.applicableTo;
+                        profile[abbrev] = ratesFrom(parseFloat(r[h.indexOf('ugamount')]) || 0, parseFloat(r[h.indexOf('pgamount')]) || 0, applicable);
+                    } else {
+                        CLASSES.forEach(c => {
+                            if (classIdx[c] >= 0) profile[abbrev][c] = parseFloat(r[classIdx[c]]) || 0;
+                        });
+                    }
+                    updated++;
+                });
+                saveProfiles();
+                renderFeeMatrix();
+                refreshAfterChange();
+                showStatus(`Fee configuration updated for ${esc(currentAY)}! ${updated} fees processed.`, 'success');
+            });
+        }
+
+        // ---------- Conversion ----------
+        function computeBreakdown(s) {
+            const b = { TF: s.fees.TF, Exam: s.fees.Exam, ABLC: s.fees.ABLC, _short: 0 };
+            const special = s.fees.Special;
+            let others = 0;
+            specialFees.forEach(f => {
+                if (f.abbrev === 'Lab') return;
+                // No special fee sanctioned -> no special fee heads
+                b[f.abbrev] = special > 0 ? rateFor(s, f.abbrev) : 0;
+                others += b[f.abbrev];
+            });
+            const lab = special > 0 ? round(special - others) : 0;
+            b.Lab = Math.max(0, lab);
+            b._short = lab < 0 ? -lab : 0;
+            return b;
+        }
+
+        function categoryText() {
+            return [...new Set(studentData.map(s => s.category).filter(Boolean))].join(', ');
+        }
+
+        function rowTotal(b) {
+            return OUTPUT_FEES.reduce((a, f) => a + (b[f] || 0), 0);
+        }
+
+        function refreshAfterChange() {
+            if (convertedData) convertFile(true);
+        }
+
+        function convertFile(silent) {
+            if (!studentData.length) {
+                showStatus('Please upload a file first', 'error');
+                return;
+            }
+
+            try {
+                const rows = studentData.map(s => ({ s, b: computeBreakdown(s) }));
+                const active = OUTPUT_FEES.filter(f => rows.some(r => r.b[f] > 0));
+
+                const outputData = [];
+                outputData.push(['Ref No', '', refInfo.refNo]);
+                outputData.push(['Year:', '', detectedAY || currentAY]);
+                outputData.push(['Category', '', categoryText()]);
+                outputData.push(['Grand Total', '', 0]);
+                outputData.push([]);
+                outputData.push(['Sl No', 'Admission No', 'Name', 'Course', 'Year', ...active.map(f => FEE_LABELS[f] || f), 'Total']);
+
+                const colSums = new Array(active.length).fill(0);
+                let grand = 0;
+                rows.forEach((r, i) => {
+                    const amounts = active.map(f => r.b[f] || 0);
+                    amounts.forEach((v, j) => { colSums[j] += v; });
+                    const total = rowTotal(r.b);
+                    grand += total;
+                    outputData.push([i + 1, r.s.admissionNo, r.s.name, finalCourse(r.s), r.s.yearNum || r.s.yearText, ...amounts, total]);
+                });
+                outputData.push(['', '', '', '', 'TOTAL', ...colSums.map(round), round(grand)]);
+                outputData[3][2] = round(grand);
+
+                convertedData = outputData;
+                convertedRows = rows;
+                convertedActive = active;
+
+                displayPreview(outputData);
+                renderChecks(rows, grand);
+                renderYearDefaults();
+                renderDisb();
+                disbSection.style.display = 'block';
+                if (!silent) showStatus('File converted successfully! Zero-value columns removed.', 'success');
+            } catch (error) {
+                console.error(error);
+                showStatus('Error converting file: ' + esc(error.message), 'error');
+            }
+        }
+
+        function renderChecks(rows, grand) {
+            const issues = [];
+            const sl = list => list.map(r => rows.indexOf(r) + 1).join(', ');
+            if (refInfo.sanction !== null && Math.abs(refInfo.sanction - grand) > 0.005) {
+                issues.push(`Grand Total ₹${round(grand)} does not match the sanctioned amount ₹${refInfo.sanction} in the reference row.`);
+            }
+            const short = rows.filter(r => r.b._short > 0);
+            if (short.length) {
+                issues.push(`Configured fees exceed the Special Fee in the file for Sl ${sl(short)}. Lab fee is set to 0 and the total is higher than sanctioned – check the fee rates.`);
+            }
+            const noClass = rows.filter(r => r.s.fees.Special > 0 && !CLASSES.includes(classOf(r.s)));
+            if (noClass.length) {
+                issues.push(`Year / UG-PG not recognised for Sl ${sl(noClass)} – the whole Special Fee is taken as Lab fee.`);
+            }
+            Object.keys(unknownFees).forEach(ft => {
+                issues.push(`Fee type "${esc(ft)}" (₹${unknownFees[ft]}) is not handled and is excluded from the output.`);
+            });
+            if (masterData.length) {
+                const unmatched = rows.filter(r => !statusOf(r.s).ok);
+                if (unmatched.length) issues.push(`Sl ${sl(unmatched)} not confirmed against the master sheet.`);
+                const noBatch = rows.filter(r => !r.s.manual && r.s.matchStatus === 'nobatch');
+                if (noBatch.length) {
+                    const groups = [...new Set(noBatch.map(r => `${finalCourse(r.s)} ${batchFor(r.s)}`))].join(', ');
+                    issues.push(`${noBatch.length} student(s) of ${esc(groups)} are not in the master sheet – Egrantz name and Adm No are used.`);
+                }
+            }
+
+            const box = document.getElementById('checkBox');
+            if (issues.length) {
+                box.innerHTML = `<div class="warn-box"><strong>Please check:</strong><ul>${issues.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
+            } else {
+                box.innerHTML = `<div class="ok-box">All checks passed.${refInfo.sanction !== null ? ` Grand Total ₹${round(grand)} matches the sanctioned amount.` : ''}</div>`;
+            }
+        }
+
+        function displayPreview(data) {
+            const table = document.getElementById('previewTable');
+            table.innerHTML = '';
+
+            data.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                row.forEach(cell => {
+                    const td = document.createElement(index === 5 ? 'th' : 'td'); // Row 6 (index 5) is header
+                    td.textContent = cell === 0 ? '0' : (cell || '');
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+
+            previewSection.style.display = 'block';
+        }
+
+        // ---------- Disbursement ----------
+        function defaultDisb(s) {
+            const stu = {
+                USF: (yearDefaults.usf[s.yearNum] || UNIV) === STUDENT,
+                Exam: (yearDefaults.exam[s.yearNum] || UNIV) === STUDENT
+            };
+            return { egrantz: false, hoa: '', full: false, stu, partial: false, partialAmt: 0 };
+        }
+
+        function getDisb(s) {
+            if (!disbState[s.id]) disbState[s.id] = defaultDisb(s);
+            return disbState[s.id];
+        }
+
+        // Splits one student's amounts into heads of account
+        function allocate(s, b, d) {
+            const out = [];
+            const add = (head, fee, amt, tag) => { if (amt > 0) out.push({ head, fee, amt, tag }); };
+
+            if (d.egrantz) {
+                OUTPUT_FEES.forEach(f => add(EGRANTZ, f, b[f]));
+                return out;
+            }
+            if (d.full) {
+                OUTPUT_FEES.forEach(f => add(f === 'ABLC' ? 'Hostel' : STUDENT, f, b[f], 'full'));
+                return out;
+            }
+            OUTPUT_FEES.forEach(f => {
+                const amt = b[f] || 0;
+                if (!amt) return;
+                if (f === 'TF' && d.partial && d.partialAmt > 0) {
+                    const paid = Math.min(d.partialAmt, amt);
+                    add(STUDENT, 'TF', paid, 'partial');
+                    add('0202-01-103-99', 'TF', round(amt - paid), 'partial');
+                } else if (f === 'TF' || f === 'Admn') {
+                    add('0202-01-103-99', f, amt);
+                } else if (['Lab', 'Lib', 'Cal'].includes(f)) {
+                    add('0202-01-103-95', f, amt);
+                } else if (PD_HEADS.includes(f)) {
+                    add('PD Special Fees', f, amt);
+                } else if (f === 'ABLC') {
+                    add('Hostel', f, amt);
+                } else {
+                    // University Special Fees (all heads together) and Exam Fee
+                    add(d.stu[USF_HEADS.includes(f) ? 'USF' : f] ? STUDENT : UNIV, f, amt);
+                }
+            });
+            return out;
+        }
+
+        function collectEntries() {
+            return convertedRows.flatMap((r, i) => allocate(r.s, r.b, getDisb(r.s)).map(e => ({ ...e, sl: i + 1, s: r.s })));
+        }
+
+        function renderYearDefaults() {
+            const years = YEARS.filter(y => studentData.some(s => s.yearNum === y));
+            const select = (type, y) => {
+                const v = yearDefaults[type][y] || UNIV;
+                return `<select data-t="${type}" data-y="${y}">
+                    <option value="${UNIV}" ${v === UNIV ? 'selected' : ''}>University</option>
+                    <option value="${STUDENT}" ${v === STUDENT ? 'selected' : ''}>Student Refund</option>
+                </select>`;
+            };
+            document.getElementById('yearDefaultsTable').innerHTML =
+                '<tr><th>Year</th><th>University Special Fees</th><th>Exam Fee</th></tr>' +
+                (years.length ? years : YEARS).map(y => `<tr><td>${y} Year</td><td>${select('usf', y)}</td><td>${select('exam', y)}</td></tr>`).join('');
+        }
+
+        document.getElementById('yearDefaultsTable').addEventListener('change', (e) => {
+            const el = e.target;
+            const { t, y } = el.dataset;
+            if (!t) return;
+            yearDefaults[t][y] = el.value;
+            LS.set('egz_yearDefaults', yearDefaults);
+            const toStudent = el.value === STUDENT;
+            studentData.filter(s => s.yearNum === y).forEach(s => {
+                const d = getDisb(s);
+                d.stu[t === 'usf' ? 'USF' : 'Exam'] = toStudent;
+            });
+            renderDisb();
+        });
+
+        function renderDisb() {
+            const rows = convertedRows;
+            const stuCols = ['USF', 'Exam'].filter(k => rows.some(r => stuAmt(r, k) > 0));
+            const showTF = rows.some(r => r.b.TF > 0);
+            const locked = d => d.egrantz || d.full;
+
+            const allChecked = (key) => {
+                const applicable = rows.filter(r => {
+                    const d = getDisb(r.s);
+                    return key.startsWith('stu:') ? stuAmt(r, key.slice(4)) > 0 && !locked(d) : true;
+                });
+                return applicable.length > 0 && applicable.every(r => {
+                    const d = getDisb(r.s);
+                    return key.startsWith('stu:') ? d.stu[key.slice(4)] : d[key];
+                });
+            };
+            const headCb = key => `<br><input type="checkbox" data-all="${esc(key)}" ${allChecked(key) ? 'checked' : ''} title="Tick / untick all">`;
+            const stuLabel = { USF: 'Univ. Special Fees', Exam: 'Exam Fee' };
+
+            let html = `<tr><th>Sl</th><th>Name</th><th>Course</th><th>Year</th><th>Total</th>
+                <th>Refund to Egrantz<br><small>(with head of account)</small>${headCb('egrantz')}</th>
+                <th>Full → Student<br><small>(except ABLC)</small>${headCb('full')}</th>
+                ${stuCols.map(k => `<th>${stuLabel[k]} → Student${headCb('stu:' + k)}</th>`).join('')}
+                ${showTF ? '<th>Partial Tuition<br>→ Student</th>' : ''}
+                <th>To Student</th></tr>`;
+
+            rows.forEach((r, i) => {
+                const d = getDisb(r.s);
+                const toStudent = sumAmt(allocate(r.s, r.b, d).filter(e => e.head === STUDENT));
+                const cb = (key, checked, disabled, label) =>
+                    `<label><input type="checkbox" data-i="${i}" data-k="${esc(key)}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}> ${label}</label>`;
+
+                html += `<tr class="${d.egrantz ? 'row-egrantz' : d.full ? 'row-full' : ''}">
+                    <td>${i + 1}</td>
+                    <td>${esc(r.s.name)}</td>
+                    <td>${esc(finalCourse(r.s))}</td>
+                    <td>${esc(r.s.yearNum || r.s.yearText)}</td>
+                    <td class="num">${round(rowTotal(r.b))}</td>
+                    <td>${cb('egrantz', d.egrantz, false, '')}
+                        <input type="text" data-i="${i}" data-k="hoa" placeholder="Head of account" value="${esc(d.hoa)}"
+                            ${d.egrantz ? '' : 'disabled'} style="width: 140px; ${d.egrantz && !d.hoa ? 'border-color: #dc3545;' : ''}"></td>
+                    <td style="text-align: center;">${cb('full', d.full, false, '')}</td>
+                    ${stuCols.map(k => stuAmt(r, k) > 0
+                    ? `<td>${cb('stu:' + k, d.stu[k] && !locked(d), locked(d), round(stuAmt(r, k)))}</td>`
+                    : '<td style="text-align: center;">–</td>').join('')}
+                    ${showTF ? `<td>${r.b.TF > 0 ? `${cb('partial', d.partial && !locked(d), locked(d), '')}
+                        <input type="number" data-i="${i}" data-k="partialAmt" min="0" max="${r.b.TF}" step="any" placeholder="paid of ${r.b.TF}"
+                            value="${d.partial && d.partialAmt ? d.partialAmt : ''}" ${!d.partial || locked(d) ? 'disabled' : ''} style="width: 100px;">` : '–'}</td>` : ''}
+                    <td class="num">${toStudent ? round(toStudent) : ''}</td>
+                </tr>`;
+            });
+            disbTable.innerHTML = html;
+            renderAccountPreview();
+        }
+
+        disbTable.addEventListener('change', (e) => {
+            const el = e.target;
+            if (el.dataset.all) {
+                const key = el.dataset.all;
+                convertedRows.forEach(r => {
+                    const d = getDisb(r.s);
+                    if (key === 'egrantz' || key === 'full') {
+                        setExclusive(d, key, el.checked);
+                    } else if (stuAmt(r, key.slice(4)) > 0 && !d.egrantz && !d.full) {
+                        d.stu[key.slice(4)] = el.checked;
+                    }
+                });
+                renderDisb();
+                return;
+            }
+
+            const i = +el.dataset.i;
+            const r = convertedRows[i];
+            if (!r) return;
+            const d = getDisb(r.s);
+            const key = el.dataset.k;
+            if (key === 'egrantz' || key === 'full') {
+                setExclusive(d, key, el.checked);
+            } else if (key === 'hoa') {
+                d.hoa = clean(el.value);
+                if (d.hoa) LS.set('egz_lastHoa', d.hoa);
+            } else if (key.startsWith('stu:')) {
+                d.stu[key.slice(4)] = el.checked;
+            } else if (key === 'partial') {
+                d.partial = el.checked;
+            } else if (key === 'partialAmt') {
+                d.partialAmt = Math.max(0, Math.min(parseFloat(el.value) || 0, r.b.TF));
+            }
+            renderDisb();
+            const focusKey = key === 'partial' ? 'partialAmt' : key === 'egrantz' && !d.hoa ? 'hoa' : null;
+            if (focusKey && el.checked) {
+                const input = disbTable.querySelector(`input[data-i="${i}"][data-k="${focusKey}"]`);
+                if (input) input.focus();
+            }
+        });
+
+        function stuAmt(r, key) {
+            return key === 'USF' ? USF_HEADS.reduce((a, h) => a + (r.b[h] || 0), 0) : (r.b[key] || 0);
+        }
+
+        // Refund to Egrantz and Full → Student exclude each other
+        function setExclusive(d, key, checked) {
+            d[key] = checked;
+            if (!checked) return;
+            d[key === 'egrantz' ? 'full' : 'egrantz'] = false;
+            if (key === 'egrantz' && !d.hoa) d.hoa = LS.get('egz_lastHoa', '');
+        }
+
+        // "15*1050=15750", or "14*20 + 1*30=310" when students pay different amounts
+        function fmtCount(list) {
+            const byRate = {};
+            list.forEach(e => { byRate[e.amt] = (byRate[e.amt] || 0) + 1; });
+            const parts = Object.keys(byRate).sort((a, b) => byRate[b] - byRate[a] || b - a)
+                .map(rate => `${byRate[rate]}*${round(+rate)}`);
+            return `${parts.join(' + ')}=${round(sumAmt(list))}`;
+        }
+
+        // One item per student holding the sum of that student's entries
+        function perStudent(list) {
+            const bySl = new Map();
+            list.forEach(e => bySl.set(e.sl, (bySl.get(e.sl) || 0) + e.amt));
+            return [...bySl.values()].map(amt => ({ amt: round(amt) }));
+        }
+
+        // Heads whose display text in the Account Summary can be set by the user
+        const EDITABLE_HEADS = [
+            ['0202-01-103-99', 'Tuition Fee + Admission Fee'],
+            ['0202-01-103-95', 'Lab + Library + Calendar'],
+            ['PD Special Fees', 'Sta, Mag, Ass, Ath, AV, WS, MI, SAF'],
+            [UNIV, 'University Special Fees and Exam Fee not refunded'],
+            ['Hostel', 'ABLC']
+        ];
+        const headLabel = head => accountNames[head] || head;
+
+        function renderAccountNames() {
+            document.getElementById('accountNamesTable').innerHTML =
+                '<tr><th>Head</th><th>Fees</th><th>Show in Account Summary as</th></tr>' +
+                EDITABLE_HEADS.map(([head, fees]) => `<tr><td>${esc(head)}</td><td style="white-space: normal;">${esc(fees)}</td>
+                    <td><input type="text" data-head="${esc(head)}" value="${esc(accountNames[head] || '')}" placeholder="${esc(head)}" style="width: 280px;"></td></tr>`).join('');
+        }
+
+        document.getElementById('accountNamesTable').addEventListener('change', (e) => {
+            const head = e.target.dataset.head;
+            if (head === undefined) return;
+            const value = clean(e.target.value);
+            if (value) accountNames[head] = value;
+            else delete accountNames[head];
+            LS.set('egz_accountNames', accountNames);
+            if (convertedRows) renderAccountPreview();
+        });
+
+        const admnList = list =>[...new Set(list.map(e => e.s.admissionNo || `Sl ${e.sl}`))].join(', ');
+        const yearLabel = y => y ? `${y} Year` : 'Year not recognised';
+
+        function generateAccountSummary() {
+            const entries = collectEntries();
+            const rows = []; // [Head of Account, Fee Types, Amount]
+            const fmtFees = list => OUTPUT_FEES
+                .map(f => list.filter(e => e.fee === f))
+                .filter(fl => fl.length)
+                .map(fl => `${fl[0].fee}(${fmtCount(fl)})`)
+                .join(' + ');
+
+            // Refund to Egrantz: one row per head of account entered
+            const byHoa = new Map();
+            entries.filter(e => e.head === EGRANTZ).forEach(e => {
+                const hoa = getDisb(e.s).hoa || 'Head of account not entered';
+                if (!byHoa.has(hoa)) byHoa.set(hoa, []);
+                byHoa.get(hoa).push(e);
+            });
+            byHoa.forEach((list, hoa) => {
+                rows.push([hoa, `Refund to Egrantz Dept. (${fmtCount(perStudent(list))}) (Adm No: ${admnList(list)})`, sumAmt(list)]);
+            });
+
+            HEAD_ORDER.filter(h => h !== EGRANTZ).forEach(head => {
+                const list = entries.filter(e => e.head === head);
+                if (!list.length) return;
+                let desc;
+                if (head === 'PD Special Fees') {
+                    desc = `PD Special Fees (${fmtCount(perStudent(list))})`;
+                } else if (head === UNIV || head === STUDENT) {
+                    const parts = [];
+                    const regular = list.filter(e => !e.tag);
+                    [...YEARS, ''].forEach(y => {
+                        const yl = regular.filter(e => (e.s.yearNum || '') === y);
+                        const usf = yl.filter(e => USF_HEADS.includes(e.fee));
+                        if (usf.length) parts.push(`University Special Fees - ${yearLabel(y)} (${fmtCount(perStudent(usf))})`);
+                        const exam = yl.filter(e => e.fee === 'Exam');
+                        if (exam.length) parts.push(`Exam Fee - ${yearLabel(y)} (${fmtCount(exam)})`);
+                    });
+                    const partial = list.filter(e => e.tag === 'partial');
+                    if (partial.length) parts.push(`Tuition Fee paid by student (${fmtCount(perStudent(partial))}) (Adm No: ${admnList(partial)})`);
+                    const full = list.filter(e => e.tag === 'full');
+                    if (full.length) parts.push(`Full refund except ABLC (${fmtCount(perStudent(full))}) (Adm No: ${admnList(full)})`);
+                    desc = parts.join(', ');
+                } else {
+                    desc = fmtFees(list);
+                }
+                rows.push([headLabel(head), desc, sumAmt(list)]);
+            });
+            const total = rows.reduce((a, r) => a + r[2], 0);
+
+            // Item-wise breakup of PD Special Fees and University Special Fees, one column per item
+            const breakup = [];
+            const addTable = (title, heads, groups) => {
+                groups = groups.filter(g => g.list.length);
+                if (!groups.length) return;
+                const items = heads.filter(h => groups.some(g => g.list.some(e => e.fee === h)));
+                const body = groups.map(g => [g.label, perStudent(g.list).length,
+                ...items.map(h => round(sumAmt(g.list.filter(e => e.fee === h)))), round(sumAmt(g.list))]);
+                const all = groups.flatMap(g => g.list);
+                if (groups.length > 1) body.push(['TOTAL', '', ...items.map(h => round(sumAmt(all.filter(e => e.fee === h)))), round(sumAmt(all))]);
+                breakup.push({ title, header: ['Account', 'Students', ...items, 'Total'], body });
+            };
+            const yearGroups = (list, prefix) => [...YEARS, ''].map(y => ({
+                label: `${prefix}${yearLabel(y)}`,
+                list: list.filter(e => (e.s.yearNum || '') === y)
+            }));
+            addTable('PD SPECIAL FEES - BREAKUP', PD_HEADS,
+                yearGroups(entries.filter(e => e.head === 'PD Special Fees'), `${headLabel('PD Special Fees')} - `));
+            addTable('UNIVERSITY SPECIAL FEES - BREAKUP', USF_HEADS, [
+                ...yearGroups(entries.filter(e => e.head === UNIV && USF_HEADS.includes(e.fee)), `${headLabel(UNIV)} - `),
+                ...yearGroups(entries.filter(e => e.head === STUDENT && !e.tag && USF_HEADS.includes(e.fee)), 'Student Refund - ')
+            ]);
+
+            // Excel layout: starts at column C, below the student table
+            const pad = r => ['', '', ...r];
+            const sheet = [pad(['ACCOUNT SUMMARY']), pad([]), pad(['Head of Account', 'Fee Types', 'Amount']),
+            ...rows.map(r => pad([r[0], r[1], round(r[2])])), pad([]), pad(['TOTAL', '', round(total)])];
+            breakup.forEach(t => {
+                sheet.push([], [], pad([t.title]), pad(t.header), ...t.body.map(pad));
+            });
+
+            return { rows, breakup, total, entries, sheet };
+        }
+
+        function renderAccountPreview() {
+            const { rows, breakup, total, entries } = generateAccountSummary();
+            const grand = convertedRows.reduce((a, r) => a + rowTotal(r.b), 0);
+            let html = '<tr><th>Head of Account</th><th>Fee Types</th><th>Amount</th></tr>';
+            rows.forEach(r => {
+                html += `<tr><td>${esc(r[0])}</td><td style="white-space: normal;">${esc(r[1])}</td><td class="num">${round(r[2])}</td></tr>`;
+            });
+            html += `<tr class="info-row"><td>TOTAL</td><td></td><td class="num">${round(total)}</td></tr>`;
+            if (Math.abs(total - grand) > 0.005) {
+                html += `<tr><td colspan="3" style="color: #c0392b;">Account total ₹${round(total)} differs from Grand Total ₹${round(grand)}</td></tr>`;
+            }
+            const noHoa = convertedRows.map((r, i) => ({ d: getDisb(r.s), i })).filter(x => x.d.egrantz && !x.d.hoa);
+            if (noHoa.length) {
+                html += `<tr><td colspan="3" style="color: #c0392b;">Enter the head of account for Refund to Egrantz (Sl ${noHoa.map(x => x.i + 1).join(', ')})</td></tr>`;
+            }
+            document.getElementById('accountPreview').innerHTML = html;
+
+            document.getElementById('breakupPreview').innerHTML = breakup.map(t => `
+                <h4 class="sub-title" style="font-size: 0.95em;">${esc(t.title)}</h4>
+                <div class="scroll-box" style="max-height: none;"><table class="grid-table">
+                    <tr>${t.header.map(h => `<th>${esc(h)}</th>`).join('')}</tr>
+                    ${t.body.map(r => `<tr class="${r[0] === 'TOTAL' ? 'info-row' : ''}">${r.map((c, j) => `<td class="${j ? 'num' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}
+                </table></div>`).join('');
+
+            renderRefundPreview(entries);
+        }
+
+        // Student refund rows: one per student, fee groups without item breakup
+        function buildRefundRows(entries) {
+            const bySl = new Map();
+            entries.filter(e => e.head === STUDENT).forEach(e => {
+                if (!bySl.has(e.sl)) bySl.set(e.sl, []);
+                bySl.get(e.sl).push(e);
+            });
+
+            const rows = [];
+            let total = 0;
+            bySl.forEach(list => {
+                const s = list[0].s;
+                const amount = round(sumAmt(list));
+                let feeText;
+                if (list[0].tag === 'full') {
+                    feeText = 'Full refund except ABLC';
+                } else {
+                    const groups = [
+                        ['Tuition Fee', list.filter(e => e.fee === 'TF')],
+                        ['University Special Fees', list.filter(e => USF_HEADS.includes(e.fee))],
+                        ['Exam Fee', list.filter(e => e.fee === 'Exam')]
+                    ];
+                    feeText = groups.filter(g => g[1].length).map(g => `${g[0]}(${round(sumAmt(g[1]))})`).join(' + ');
+                }
+                total += amount;
+                rows.push({ s, feeText, amount });
+            });
+            return { rows, total: round(total) };
+        }
+
+        function renderRefundPreview(entries) {
+            const { rows, total } = buildRefundRows(entries);
+            const box = document.getElementById('refundPreviewBox');
+            box.style.display = rows.length ? 'block' : 'none';
+            downloadStudentRefundBtn.style.display = rows.length ? 'block' : 'none';
+            if (!rows.length) return;
+            document.getElementById('refundPreview').innerHTML =
+                '<tr><th>Sl. No.</th><th>Admn No.</th><th>Name</th><th>Course</th><th>Year</th><th>Fee Types</th><th>Amount</th></tr>' +
+                rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.s.admissionNo)}</td><td>${esc(r.s.name)}</td><td>${esc(finalCourse(r.s))}</td>
+                    <td>${esc(r.s.yearNum || r.s.yearText)}</td><td style="white-space: normal;">${esc(r.feeText)}</td><td class="num">${r.amount}</td></tr>`).join('') +
+                `<tr class="info-row"><td colspan="6">GRAND TOTAL</td><td class="num">${total}</td></tr>`;
+        }
+
+        // ---------- Downloads ----------
+        function downloadFile() {
+            if (!convertedData) {
+                showStatus('No converted data available', 'error');
+                return;
+            }
+
+            const finalData = [...convertedData, [], [], [], ...generateAccountSummary().sheet];
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(finalData);
+            ws['!cols'] = [
+                { width: 8 },   // Sl No
+                { width: 15 },  // Admission No
+                { width: 25 },  // Name
+                { width: 20 },  // Course
+                { width: 8 },   // Year
+                ...convertedActive.map(f => ({ width: f === 'TF' || f === 'Exam' ? 12 : 10 })),
+                { width: 12 }   // Total
+            ];
+            XLSX.utils.book_append_sheet(wb, ws, 'Formatted Data');
+
+            // Audit sheet of names / admission numbers / courses changed from the Egrantz file
+            const changed = convertedRows.map((r, i) => ({ r, i })).filter(({ r }) =>
+                r.s.name !== r.s.egName || r.s.admissionNo !== r.s.egAdmn || finalCourse(r.s) !== r.s.egCourse);
+            if (changed.length) {
+                const aoa = [['Sl No', 'Egrantz Name', 'Egrantz Adm No', 'Egrantz Course', 'Name Used', 'Adm No Used', 'Course Used', 'Match']];
+                changed.forEach(({ r, i }) => aoa.push([i + 1, r.s.egName, r.s.egAdmn, r.s.egCourse, r.s.name, r.s.admissionNo, finalCourse(r.s), statusOf(r.s).label]));
+                const cws = XLSX.utils.aoa_to_sheet(aoa);
+                cws['!cols'] = [{ width: 8 }, { width: 25 }, { width: 14 }, { width: 30 }, { width: 25 }, { width: 12 }, { width: 20 }, { width: 18 }];
+                XLSX.utils.book_append_sheet(wb, cws, 'Corrections');
+            }
+
+            XLSX.writeFile(wb, `${fileName}_formatted.xlsx`);
+            showStatus('File downloaded successfully!', 'success');
+        }
+
+        function downloadStudentRefundFile() {
+            if (!convertedRows) {
+                showStatus('No student data available', 'error');
+                return;
+            }
+
+            const { rows, total } = buildRefundRows(collectEntries());
+            if (!rows.length) {
+                showStatus('No students found for refund based on current selections', 'error');
+                return;
+            }
+
+            const refundData = [];
+            refundData.push([refInfo.refNo]);
+            refundData.push(['Category', categoryText()]);
+            refundData.push(['Year', detectedAY || currentAY]);
+            refundData.push([]);
+            refundData.push(['Sl. No.', 'Admn No.', 'Name', 'Course', 'Year', 'Mobile No.', 'IFSC', 'Account No', 'Fee Types', 'Amount']);
+            rows.forEach((r, i) => refundData.push([
+                i + 1, r.s.admissionNo, r.s.name, finalCourse(r.s), r.s.yearNum || r.s.yearText,
+                '', '', '', // Mobile No., IFSC, Account No - to be filled later
+                r.feeText, r.amount
+            ]));
+            refundData.push(['', '', '', '', '', '', '', '', 'GRAND TOTAL', total]);
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(refundData);
+            ws['!cols'] = [
+                { width: 8 },   // Sl No
+                { width: 15 },  // Admn No
+                { width: 25 },  // Name
+                { width: 20 },  // Course
+                { width: 8 },   // Year
+                { width: 15 },  // Mobile No
+                { width: 12 },  // IFSC
+                { width: 18 },  // Account No
+                { width: 40 },  // Fee Types
+                { width: 12 }   // Amount
+            ];
+            XLSX.utils.book_append_sheet(wb, ws, 'Student Refund');
+            XLSX.writeFile(wb, `${fileName}_student_refund.xlsx`);
+
+            showStatus(`Student Refund Excel downloaded successfully! ${rows.length} students included.`, 'success');
+        }
+
+        function downloadSampleFile() {
+            const sampleData = [];
+            sampleData.push(['GE001202400000000001(10370)']);
+            sampleData.push(['SLNO', 'Name', 'Admission No', 'Category', 'Course Name', 'Year', 'Fee Type', 'Period', 'Amount']);
+            sampleData.push([1, 'Student A', '101', 'General', 'BA English', 'I Year', 'Tuition Fees', 'July 2024', 1050]);
+            sampleData.push([2, 'Student A', '101', 'General', 'BA English', 'I Year', 'Exam Fees', 'July 2024', 1710]);
+            sampleData.push([3, 'Student A', '101', 'General', 'BA English', 'I Year', 'Special Fees', 'July 2024', 1440]);
+            sampleData.push([4, 'Student B', '', 'General', 'BA History', 'I Year', 'Tuition Fees', 'July 2024', 1050]);
+            sampleData.push([5, 'Student B', '', 'General', 'BA History', 'I Year', 'Exam Fees', 'July 2024', 1710]);
+            sampleData.push([6, 'Student B', '', 'General', 'BA History', 'I Year', 'Special Fees', 'July 2024', 1440]);
+            sampleData.push([7, 'Student C', '302', 'General', 'BCom', 'I Year', 'Tuition Fees', 'July 2024', 1050]);
+            sampleData.push([8, 'Student C', '302', 'General', 'BCom', 'I Year', 'Exam Fees', 'July 2024', 1710]);
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(sampleData);
+            ws['!cols'] = [
+                { width: 8 },   // Sl No
+                { width: 20 },  // Name
+                { width: 15 },  // Admission No
+                { width: 12 },  // Category
+                { width: 20 },  // Course Name
+                { width: 10 },  // Year
+                { width: 20 },  // Fee Type
+                { width: 15 },  // Period
+                { width: 10 }   // Amount
+            ];
+            XLSX.utils.book_append_sheet(wb, ws, 'Sample_Data');
+            XLSX.writeFile(wb, 'Egrantz_Sample_Format.xlsx');
+
+            showStatus('Sample Excel file downloaded!', 'success');
+        }
+
+        function showStatus(message, type) {
+            status.innerHTML = `<div class="status ${type}">${message}</div>`;
+            setTimeout(() => {
+                status.innerHTML = '';
+            }, 5000);
+        }
+
+        renderMaster();
+        renderAccountNames();
+    </script>
+</body>
+
+</html>
